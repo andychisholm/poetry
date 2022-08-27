@@ -173,6 +173,7 @@ class Factory(BaseFactory):
     ) -> LegacyRepository:
         from poetry.repositories.legacy_repository import LegacyRepository
         from poetry.repositories.single_page_repository import SinglePageRepository
+        from poetry.repositories.indexed import IndexedLegacyRepository
 
         if "url" not in source:
             raise RuntimeError("Unsupported source specified")
@@ -182,11 +183,18 @@ class Factory(BaseFactory):
             raise RuntimeError("Missing [name] in source.")
         name = source["name"]
         url = source["url"]
+        indexed = bool(source.get("indexed", False))
 
         repository_class = LegacyRepository
 
         if re.match(r".*\.(htm|html)$", url):
             repository_class = SinglePageRepository
+            if indexed:
+                raise RuntimeError(
+                    "cannot set indexed=True for a single-page repository"
+                )
+        elif indexed:
+            repository_class = IndexedLegacyRepository
 
         return repository_class(
             name,
